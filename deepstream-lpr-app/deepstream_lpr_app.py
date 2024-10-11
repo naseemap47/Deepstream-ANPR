@@ -58,7 +58,8 @@ TILED_OUTPUT_HEIGHT=1080
 GST_CAPS_FEATURES_NVMM="memory:NVMM"
 OSD_PROCESS_MODE= 0
 OSD_DISPLAY_TEXT= 0
-pgie_classes_str= ["lpd"]
+ROI = False
+
 class_names = open('lpd_labels.txt').read().splitlines()
 # tiler_sink_pad_buffer_probe  will extract metadata received on OSD sink pad
 # and update params for drawing rectangle, object information etc.
@@ -117,7 +118,7 @@ def tiler_src_pad_buffer_probe(pad,info,u_data,args):
             xmin, ymin, xmax, ymax = left, top, left+width, top+height
             print(f"xmin: {xmin}, ymin: {ymin}, xmax: {xmax}, ymax: {ymax}, class: {class_names[cls_id]}, tracker_id: {tracker_id}")
 
-            if args[3] == '0':
+            if not ROI:
                 #no ROI
                 l_class = obj_meta.classifier_meta_list
 
@@ -311,67 +312,17 @@ def create_source_bin(index,uri):
         return None
     return nbin
 
-def main():
-    # # Check input arguments
-    # if len(args) < 2:
-    #     sys.stderr.write("Usage: {} [1:us model|2: ch_model] [1:filesink|2:fakesink|"
-    #     "3:display sink] [0:ROI disable|0:ROI enable] <In mp4 filename> <in mp4 filename> ... "
-    #     "<out H264 filename>\n".format(args[0]))
-    #     sys.exit(1)
+def main(args):
 
-    args = [
-        'deepstream_lpr_app.py', '1', '3', '0',
-
-        '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-01.mp4', 
-        '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-02.mp4', 
-        '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-03.mp4', 
-        '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-04.mp4', 
-        '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-05-ENTRY.mp4', 
-        '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-05-EXIT.mp4',
-        '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-06.mp4',
-        '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-07(CP IP CAM).mp4',
-        '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-08.mp4',
-
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-01.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-02.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-03.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-04.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-05-ENTRY.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-05-EXIT.mp4',
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-06.mp4',
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-07(CP IP CAM).mp4',
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-08.mp4',
-
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-01.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-02.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-03.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-04.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-05-ENTRY.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-05-EXIT.mp4',
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-06.mp4',
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-07(CP IP CAM).mp4',
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-08.mp4',
-
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-01.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-02.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-03.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-04.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-05-ENTRY.mp4', 
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-05-EXIT.mp4',
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-06.mp4',
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-07(CP IP CAM).mp4',
-        # '/home/eternalcm/Projects/Mahindra-Vihaan/videos/CAM-08.mp4',
-
-        'out.h264'
-    ]
+    # Check input arguments
+    if len(args) < 1:
+        sys.stderr.write("Usage: {} <In mp4 filename> <in mp4 filename> \n".format(args[0]))
+        sys.exit(1)
 
     print(args)
-    global perf_data
-    perf_data = PERF_DATA(len(args)-5)
-
-    for i in range(0,len(args)-5):
+    for i in range(0,len(args)-1):
         fps_streams["stream{0}".format(i)]=GETFPS(i)
-    number_sources=len(args)-5
+    number_sources=len(args)-1
     print(number_sources)
     # Standard GStreamer initialization
     GObject.threads_init()
@@ -395,7 +346,7 @@ def main():
     pipeline.add(streammux)
     for i in range(number_sources):
         print("Creating source_bin ",i," \n ")
-        uri_name=args[i+4]
+        uri_name=args[i+1]
         if uri_name.find("rtsp://") == 0 :
             is_live = True
         else:
@@ -456,10 +407,6 @@ def main():
     if not sgie1:
         sys.stderr.write(" Unable to make sgie1 \n")
 
-    # sgie2 = Gst.ElementFactory.make("nvinfer", "secondary2-nvinference-engine")
-    # if not sgie2:
-    #     sys.stderr.write(" Unable to make sgie2 \n")
-
     print("Creating nvvidconv1 \n ")
     nvvidconv1 = Gst.ElementFactory.make("nvvideoconvert", "convertor1")
     if not nvvidconv1:
@@ -495,25 +442,10 @@ def main():
         if not transform:
             sys.stderr.write(" Unable to create transform \n")
 
-    if args[2] == '1':
-        print("Creating FileSink \n")
-        sink = Gst.ElementFactory.make("filesink", "nvvideo-renderer")
-        if not sink:
-            sys.stderr.write(" Unable to create file sink \n")
-        sink.set_property("location", args[-1])
-    elif args[2] == '3':
-        print("Creating EGLSink \n")
-        sink = Gst.ElementFactory.make("nveglglessink", "nvvideo-renderer")
-        if not sink:
-            sys.stderr.write(" Unable to create egl sink \n")
-    elif args[2] == '2':
-        print("Creating FakeSink \n")
-        sink = Gst.ElementFactory.make("fakesink", "fakesink")
-        if not sink:
-            sys.stderr.write(" Unable to create fake sink \n")
-    else:
-        print(" Invalid argument for sink \n")
-        sys.exit(1)
+    print("Creating EGLSink \n")
+    sink = Gst.ElementFactory.make("nveglglessink", "nvvideo-renderer")
+    if not sink:
+        sys.stderr.write(" Unable to create egl sink \n")
 
     if is_live:
         print("Atleast one of the sources is live")
@@ -525,8 +457,6 @@ def main():
     streammux.set_property('batched-push-timeout', 4000000)
 
     pgie.set_property('config-file-path', "lpd_yolov8_config.txt")
-    # pgie.set_property('config-file-path', "lpd_yolov4-tiny_us.txt")
-    # pgie.set_property('config-file-path', "trafficamnet_config.txt")
     pgie_batch_size=pgie.get_property("batch-size")
     if(pgie_batch_size != number_sources):
         print("WARNING: Overriding infer-config batch-size",pgie_batch_size," with number of sources ", number_sources," \n")
@@ -558,25 +488,8 @@ def main():
         #     tracker.set_property('enable_batch_process',
         #                          tracker_enable_batch_process)
 
-    if args[1] == '1':
-        # sgie1.set_property('config-file-path', "lpd_us_config.txt")
-        sgie1.set_property('config-file-path', "lpr_config_sgie_us_onnx.txt")
-    elif args[1] == '2':
-        sgie1.set_property('config-file-path', "lpd_ccpd_config.txt")
-    else:
-        print(" Invalid argument for LP detector model \n")
-        sys.exit(1)
+    sgie1.set_property('config-file-path', "lpr_config_sgie_us_onnx.txt")
     sgie1.set_property('process-mode', 2)
-
-    # if args[1] == '1':
-    #     sgie2.set_property('config-file-path', "lpr_config_sgie_us_onnx.txt")
-    #     # sgie2.set_property('config-file-path', "lpr_config_sgie_us.txt")
-    # elif args[1] == '2':
-    #     sgie2.set_property('config-file-path', "lpr_config_sgie_ch.txt")
-    # else:
-    #     print(" Invalid argument for LP recognition model \n")
-    #     sys.exit(1)
-    # sgie2.set_property('process-mode', 2)
 
     tiler_rows=int(math.sqrt(number_sources))
     tiler_columns=int(math.ceil((1.0*number_sources)/tiler_rows))
@@ -602,7 +515,6 @@ def main():
     pipeline.add(tracker)
     pipeline.add(nvanalytics)
     pipeline.add(sgie1)
-    # pipeline.add(sgie2)
     pipeline.add(tiler)
     pipeline.add(nvvidconv)
     pipeline.add(filter1)
@@ -613,16 +525,14 @@ def main():
     pipeline.add(sink)
 
     print("Linking elements in the Pipeline \n")
-    if args[3] == '0':            #ROI disable
+    # ROI disable
+    if not ROI:
         streammux.link(pgie)
         pgie.link(queue1)
         queue1.link(tracker)
         tracker.link(queue2)
         queue2.link(sgie1)
         sgie1.link(queue3)
-        # queue3.link(sgie2)
-        # sgie2.link(queue4)
-
         queue3.link(nvvidconv1)
         nvvidconv1.link(queue4)
         queue4.link(filter1)
@@ -639,34 +549,36 @@ def main():
         else:
             nvosd.link(queue8)
             queue8.link(sink)
+    
+    # ROI enable
+    elif ROI:
+        streammux.link(pgie)
+        pgie.link(queue1)
+        queue1.link(tracker)
+        tracker.link(queue2)
+        queue2.link(nvanalytics)
+        nvanalytics.link(queue3)
+        queue3.link(sgie1)
+        sgie1.link(queue4)
+        # queue4.link(sgie2)
+        # sgie2.link(queue5)
 
-    # elif args[3] == '1':               #ROI enable
-    #     streammux.link(pgie)
-    #     pgie.link(queue1)
-    #     queue1.link(tracker)
-    #     tracker.link(queue2)
-    #     queue2.link(nvanalytics)
-    #     nvanalytics.link(queue3)
-    #     queue3.link(sgie1)
-    #     sgie1.link(queue4)
-    #     queue4.link(sgie2)
-    #     sgie2.link(queue5)
-    #     queue5.link(nvvidconv1)
-    #     nvvidconv1.link(queue6)
-    #     queue6.link(filter1)
-    #     filter1.link(queue7)
-    #     queue7.link(tiler)
-    #     tiler.link(queue8)
-    #     queue8.link(nvvidconv)
-    #     nvvidconv.link(queue9)
-    #     queue9.link(nvosd)
-    #     if is_aarch64():
-    #         nvosd.link(queue10)
-    #         queue10.link(transform)
-    #         transform.link(sink)
-    #     else:
-    #         nvosd.link(queue10)
-    #         queue10.link(sink) 
+        queue4.link(nvvidconv1)
+        nvvidconv1.link(queue5)
+        queue5.link(filter1)
+        filter1.link(queue6)
+        queue6.link(tiler)
+        tiler.link(queue7)
+        queue7.link(nvvidconv)
+        nvvidconv.link(queue8)
+        queue8.link(nvosd)
+        if is_aarch64():
+            nvosd.link(queue9)
+            queue9.link(transform)
+            transform.link(sink)
+        else:
+            nvosd.link(queue9)
+            queue9.link(sink) 
     else:
         print(" Invalid argument for ROI enable \n")
         sys.exit(1)
@@ -687,7 +599,7 @@ def main():
     # List the sources
     print("Now playing...")
     for i, source in enumerate(args):
-        if ((len(args) - 1) > i > 3):
+        if ((len(args) - 1) > i > 0):
             print(i, ": ", source)
 
     print("Starting pipeline \n")
@@ -703,4 +615,4 @@ def main():
     pipeline.set_state(Gst.State.NULL)
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(main(sys.argv))
